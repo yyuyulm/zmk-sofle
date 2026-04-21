@@ -25,3 +25,19 @@ For 3D printed model files or any issues and malfunctions with the keyboard, ple
 ## Sofle Keymap
 
 ![Sofle键位图](keymap-drawer/eyelash_sofle.svg)
+
+## Local Firmware Download
+
+Use `scripts/download-firmware.sh` to fetch a firmware artifact from GitHub Actions without `zmk download`.
+
+Example:
+
+```sh
+sh scripts/download-firmware.sh --run-id 123456789
+```
+
+Interactive selection:
+
+```sh
+sh scripts/download-firmware.sh --select
+```

@@ -27,3 +27,18 @@
 
 ![Sofle键位图](keymap-drawer/eyelash_sofle.svg)
 
+## 本地下载固件
+
+可以使用 `scripts/download-firmware.sh` 从 GitHub Actions 下载固件，不用 `zmk download`。
+
+示例：
+
+```sh
+sh scripts/download-firmware.sh --run-id 123456789
+```
+
+交互选择：
+
+```sh
+sh scripts/download-firmware.sh --select
+```
