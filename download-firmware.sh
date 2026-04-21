@@ -13,9 +13,11 @@ Options:
   --repo OWNER/REPO     GitHub repository to use
   --workflow NAME       Workflow name to search (default: Build ZMK firmware)
   --branch NAME         Branch to search (default: current git branch)
+  -l, --list            List recent runs and exit
   --select              Pick a run interactively from a numbered list
   --run-id ID           Download a specific workflow run id
   --artifact NAME       Optional artifact name filter
+  -O, --overwrite       Replace an existing output directory
   -o, --output DIR      Output directory (default: firmware)
   -h, --help            Show this help
 EOF
@@ -24,10 +26,13 @@ EOF
 repo=""
 workflow="Build ZMK firmware"
 branch=""
+list_mode=false
 select_mode=false
+overwrite=false
 run_id=""
 artifact=""
 output_dir="firmware"
+total_runs=0
 
 cleanup() {
   if [ -n "${runs_file:-}" ] && [ -e "$runs_file" ]; then
@@ -35,21 +40,21 @@ cleanup() {
   fi
 }
 
-choose_run_id() {
+fetch_runs() {
   runs_file=$(mktemp "${TMPDIR:-/tmp}/zmk-runs.XXXXXX")
   trap cleanup EXIT INT HUP TERM
 
   if [ -n "$repo" ]; then
     if [ -n "$branch" ]; then
-      gh run list --repo "$repo" --workflow "$workflow" --branch "$branch" -L 20 --json databaseId,displayTitle,createdAt,status,conclusion,headBranch --jq '.[] | [(.databaseId|tostring), .createdAt, .headBranch, .status, .conclusion, .displayTitle] | @tsv' > "$runs_file"
+      gh run list --repo "$repo" --workflow "$workflow" --branch "$branch" -L 20 --json databaseId,displayTitle,createdAt,status,conclusion,headBranch --jq 'sort_by(.createdAt) | .[] | [(.databaseId|tostring), .createdAt, .headBranch, .status, .conclusion, .displayTitle] | @tsv' > "$runs_file"
     else
-      gh run list --repo "$repo" --workflow "$workflow" -L 20 --json databaseId,displayTitle,createdAt,status,conclusion,headBranch --jq '.[] | [(.databaseId|tostring), .createdAt, .headBranch, .status, .conclusion, .displayTitle] | @tsv' > "$runs_file"
+      gh run list --repo "$repo" --workflow "$workflow" -L 20 --json databaseId,displayTitle,createdAt,status,conclusion,headBranch --jq 'sort_by(.createdAt) | .[] | [(.databaseId|tostring), .createdAt, .headBranch, .status, .conclusion, .displayTitle] | @tsv' > "$runs_file"
     fi
   else
     if [ -n "$branch" ]; then
-      gh run list --workflow "$workflow" --branch "$branch" -L 20 --json databaseId,displayTitle,createdAt,status,conclusion,headBranch --jq '.[] | [(.databaseId|tostring), .createdAt, .headBranch, .status, .conclusion, .displayTitle] | @tsv' > "$runs_file"
+      gh run list --workflow "$workflow" --branch "$branch" -L 20 --json databaseId,displayTitle,createdAt,status,conclusion,headBranch --jq 'sort_by(.createdAt) | .[] | [(.databaseId|tostring), .createdAt, .headBranch, .status, .conclusion, .displayTitle] | @tsv' > "$runs_file"
     else
-      gh run list --workflow "$workflow" -L 20 --json databaseId,displayTitle,createdAt,status,conclusion,headBranch --jq '.[] | [(.databaseId|tostring), .createdAt, .headBranch, .status, .conclusion, .displayTitle] | @tsv' > "$runs_file"
+      gh run list --workflow "$workflow" -L 20 --json databaseId,displayTitle,createdAt,status,conclusion,headBranch --jq 'sort_by(.createdAt) | .[] | [(.databaseId|tostring), .createdAt, .headBranch, .status, .conclusion, .displayTitle] | @tsv' > "$runs_file"
     fi
   fi
 
@@ -58,17 +63,37 @@ choose_run_id() {
     exit 1
   fi
 
-  printf 'Select a run to download:\n'
+  total_runs=$(wc -l < "$runs_file" | tr -d '[:space:]')
+}
+
+print_runs() {
+  fetch_runs
+
+  printf 'Available runs:\n'
   index=1
   while IFS="$(printf '\t')" read -r row_run_id created_at head_branch status conclusion title; do
     [ -n "$row_run_id" ] || continue
-    printf '%2s) %s | %s | %s/%s | %s\n' "$index" "$created_at" "$head_branch" "$status" "$conclusion" "$title"
+    display_num=$((total_runs - index + 1))
+    printf '%2s) id:%s | %s | %s | %s/%s | %s\n' "$display_num" "$row_run_id" "$created_at" "$head_branch" "$status" "$conclusion" "$title"
+    index=$((index + 1))
+  done < "$runs_file"
+}
+
+choose_run_id() {
+  fetch_runs
+
+  printf 'Select a run to download (1 = newest):\n'
+  index=1
+  while IFS="$(printf '\t')" read -r row_run_id created_at head_branch status conclusion title; do
+    [ -n "$row_run_id" ] || continue
+    display_num=$((total_runs - index + 1))
+    printf '%2s) id:%s | %s | %s | %s/%s | %s\n' "$display_num" "$row_run_id" "$created_at" "$head_branch" "$status" "$conclusion" "$title"
     index=$((index + 1))
   done < "$runs_file"
 
   total=$((index - 1))
   while :; do
-    printf 'Enter selection [1-%s]: ' "$total"
+    printf 'Enter selection [1-%s] (1 = newest): ' "$total"
     IFS= read -r choice || exit 1
 
     case "$choice" in
@@ -77,7 +102,8 @@ choose_run_id() {
         ;;
       *)
         if [ "$choice" -ge 1 ] && [ "$choice" -le "$total" ]; then
-          sed -n "${choice}p" "$runs_file" | cut -f1
+          line=$((total - choice + 1))
+          sed -n "${line}p" "$runs_file" | cut -f1
           return 0
         fi
         printf 'Selection out of range.\n' >&2
@@ -100,6 +126,10 @@ while [ "$#" -gt 0 ]; do
       branch=${2:?missing value for --branch}
       shift 2
       ;;
+    -l|--list)
+      list_mode=true
+      shift
+      ;;
     --select)
       select_mode=true
       shift
@@ -111,6 +141,10 @@ while [ "$#" -gt 0 ]; do
     --artifact)
       artifact=${2:?missing value for --artifact}
       shift 2
+      ;;
+    -O|--overwrite)
+      overwrite=true
+      shift
       ;;
     -o|--output)
       output_dir=${2:?missing value for --output}
@@ -128,9 +162,9 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-if [ -e "$output_dir" ]; then
-  printf 'Refusing to overwrite existing path: %s\n' "$output_dir" >&2
-  exit 1
+if [ "$list_mode" = true ]; then
+  print_runs
+  exit 0
 fi
 
 if [ -z "$run_id" ] && [ "$select_mode" = true ]; then
@@ -157,6 +191,15 @@ fi
 if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
   printf 'No successful run found. Pass --run-id to download a specific run.\n' >&2
   exit 1
+fi
+
+if [ -e "$output_dir" ]; then
+  if [ "$overwrite" = true ]; then
+    rm -rf "$output_dir"
+  else
+    printf 'Refusing to overwrite existing path: %s\n' "$output_dir" >&2
+    exit 1
+  fi
 fi
 
 printf 'Downloading run %s into %s\n' "$run_id" "$output_dir"

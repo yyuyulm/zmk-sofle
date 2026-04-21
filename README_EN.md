@@ -28,7 +28,7 @@ For 3D printed model files or any issues and malfunctions with the keyboard, ple
 
 ## Local Firmware Download
 
-Use `scripts/download-firmware.sh` to fetch a firmware artifact from GitHub Actions without `zmk download`.
+Use `download-firmware.sh` to fetch a firmware artifact from GitHub Actions without `zmk download`.
 
 Example:
 

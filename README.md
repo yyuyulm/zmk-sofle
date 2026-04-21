@@ -29,7 +29,7 @@
 
 ## 本地下载固件
 
-可以使用 `scripts/download-firmware.sh` 从 GitHub Actions 下载固件，不用 `zmk download`。
+可以使用 `download-firmware.sh` 从 GitHub Actions 下载固件，不用 `zmk download`。
 
 示例：
 
