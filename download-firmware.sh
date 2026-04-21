@@ -16,7 +16,7 @@ Options:
   -l, --list            List recent runs and exit
   --select              Pick a run interactively from a numbered list
   --run-id ID           Download a specific workflow run id
-  --artifact NAME       Optional artifact name filter
+  --artifact NAME       Optional artifact name filter (default: firmware)
   -O, --overwrite       Replace an existing output directory
   -o, --output DIR      Output directory (default: firmware)
   -h, --help            Show this help
@@ -204,12 +204,26 @@ fi
 
 printf 'Downloading run %s into %s\n' "$run_id" "$output_dir"
 
-if [ -n "$repo" ] && [ -n "$artifact" ]; then
-  gh run download "$run_id" --repo "$repo" --name "$artifact" -D "$output_dir"
-elif [ -n "$repo" ]; then
-  gh run download "$run_id" --repo "$repo" -D "$output_dir"
-elif [ -n "$artifact" ]; then
-  gh run download "$run_id" --name "$artifact" -D "$output_dir"
+artifact_name=${artifact:-firmware}
+
+staging_dir=$(mktemp -d "${TMPDIR:-/tmp}/zmk-firmware.XXXXXX")
+
+cleanup_staging() {
+  if [ -n "${staging_dir:-}" ] && [ -d "$staging_dir" ]; then
+    rm -rf "$staging_dir"
+  fi
+}
+
+trap 'cleanup; cleanup_staging' EXIT INT HUP TERM
+
+if [ -n "$repo" ]; then
+  gh run download "$run_id" --repo "$repo" --name "$artifact_name" -D "$staging_dir"
 else
-  gh run download "$run_id" -D "$output_dir"
+  gh run download "$run_id" --name "$artifact_name" -D "$staging_dir"
 fi
+
+mkdir -p "$output_dir"
+for item in "$staging_dir"/*; do
+  [ -e "$item" ] || continue
+  mv "$item" "$output_dir"/
+done

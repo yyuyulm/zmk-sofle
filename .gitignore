@@ -3,3 +3,4 @@ firmware/
 zmk/
 modules/
 tools/
+.DS_store
