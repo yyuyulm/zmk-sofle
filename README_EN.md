@@ -30,6 +30,12 @@ For 3D printed model files or any issues and malfunctions with the keyboard, ple
 
 Use `download-firmware.sh` to fetch a firmware artifact from GitHub Actions without `zmk download`.
 
+If you cloned a fork and `gh` points at the upstream repo instead of your fork, set the default repo for this directory first:
+
+```sh
+gh repo set-default <your-fork>
+```
+
 Example:
 
 ```sh

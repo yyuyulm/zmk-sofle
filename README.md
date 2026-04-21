@@ -31,6 +31,12 @@
 
 可以使用 `download-firmware.sh` 从 GitHub Actions 下载固件，不用 `zmk download`。
 
+如果你是从 fork 克隆的，而 `gh` 默认指向的是上游仓库而不是你的 fork，先在当前目录设置默认仓库：
+
+```sh
+gh repo set-default <你的 fork>
+```
+
 示例：
 
 ```sh
