@@ -3,4 +3,3 @@ firmware/
 zmk/
 modules/
 tools/
-.west/
