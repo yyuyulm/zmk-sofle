@@ -75,10 +75,10 @@
 &kp TAB     &kp Q      &kp W         &kp E         &kp R       &kp T        &mmv MOVE_DOWN      &kp Y        &kp U      &kp I          &kp O        &kp P       &kp BSLH
 &kp CAPS    &kp A      &kp S         &kp D         &kp F       &kp G        &mmv MOVE_LEFT      &kp H        &kp J      &kp K          &kp L        &kp SEMI    &kp ENTER
 &kp LSHFT   &kp Z      &kp X         &kp C         &kp V       &kp B        &mmv MOVE_RIGHT     &kp N        &kp M      &kp COMMA      &kp DOT      &kp FSLH    &kp APOS
-&kp C_MUTE  &kp LCTRL  &kp LEFT_ALT  &kp LEFT_GUI  &kp SPACE   &mo 2        &mkp LCLK           &kp RSHFT    &mo 1      &kp LC(SPACE)  &kp RSHFT    &kp DELETE
+&mkp MCLK   &kp LCTRL  &kp LEFT_ALT  &kp LEFT_GUI  &kp SPACE   &mo 2        &mkp LCLK           &kp LC(SPACE)    &mo 1  &kp RSHFT      &kp RSHFT    &kp DELETE
             >;
 
-            sensor-bindings = <&inc_dec_kp C_VOLUME_UP C_VOL_DN>;
+            sensor-bindings = <&scroll_encoder>;
             display-name = "LAYER0";
         };
 
@@ -92,7 +92,7 @@
             >;
 
             display-name = "LAYER1";
-            sensor-bindings = <&scroll_encoder>;
+            sensor-bindings = <&inc_dec_kp C_VOLUME_UP C_VOL_DN>;
         };
 
         layer_2 {
