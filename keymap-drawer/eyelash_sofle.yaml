@@ -53,16 +53,16 @@ layers:
   - {t: ., s: '>'}
   - {t: /, s: '?'}
   - {t: '''', s: '"'}
-  - $$mdi:volume-off$$
+  - $$mdi:mouse-scroll-wheel$$
   - $$mdi:apple-keyboard-control$$
   - $$mdi:apple-keyboard-option$$
   - $$mdi:apple-keyboard-command$$
   - $$mdi:keyboard-space$$
   - LAYER2
   - $$mdi:mouse-left-click-outline$$
-  - $$mdi:apple-keyboard-shift$$
-  - LAYER1
   - Ctl+$$mdi:keyboard-space$$
+  - LAYER1
+  - $$mdi:apple-keyboard-shift$$
   - $$mdi:apple-keyboard-shift$$
   - $$mdi:backspace-reverse-outline$$
   LAYER1:
